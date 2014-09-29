@@ -111,13 +111,46 @@ mouvement = function(sens, num) {
 **/
 deg2rad = function(degree) {
 	return (degree/180) * Math.PI;
-}
+};
+
 /**
 * Fonction permettant de convertir des randians en degrés
 **/
 rad2deg = function(radian) {
 	return (radian / Math.PI) * 180;
-}
+};
+
+/**
+* Ajouter une point à un joueur
+**/
+ajouterPoint = function(num) {
+	gameInfos['joueur' + num].points++;
+
+	if(gameInfos['joueur' + num].points < 0)
+		texteScore = '<span style="color:#c0392b">' + gameInfos['joueur' + num].points + ' pt</span>';
+	else if(gameInfos['joueur' + num].points == 0)
+		texteScore = gameInfos['joueur' + num].points + ' pt';
+	else
+		texteScore = gameInfos['joueur' + num].points + ' pts';
+
+	document.getElementById('joueur' + num + 'Score').innerHTML = texteScore;
+};
+
+/**
+* Retirer un point à un joueur
+**/
+retirerPoint = function(num) {
+	gameInfos['joueur' + num].points--;
+
+	if(gameInfos['joueur' + num].points < 0)
+		texteScore = '<span style="color:#c0392b">' + gameInfos['joueur' + num].points + ' pt</span>';
+	else if(gameInfos['joueur' + num].points == 0)
+		texteScore = gameInfos['joueur' + num].points + ' pt';
+	else
+		texteScore = gameInfos['joueur' + num].points + ' pts';
+
+	document.getElementById('joueur' + num + 'Score').innerHTML = texteScore;
+};
 /* */
 
 window.addEventListener('resize', resizeEcran);
@@ -274,7 +307,7 @@ socket.on('messageRecoie', function(donnees) {
 	}
 });
 
-socket.on('envoieNotif', function(message) {
+socket.on('envoieNotif', function(donnees) {
 	if(donnees.jeu_id && donnees.message) {
 		if(donnees.jeu_id == jeu_id) {
 			postTchat('<span class="italique">' + donnees.message + '</span>');
@@ -356,6 +389,36 @@ socket.on('debutR', function(donnees) {
 		gameInfos.balleVitesse = 0.5; // On reset la vitesse de la balle
 	}
 });
+
+// Dès qu'un joueur a perdu et donc un autre à gagné
+socket.on('finR', function(donnees) {
+		if(donnees.gagnant && donnees.perdant) {
+			gameInfos.enCours = false; // On stop la partie temporairement
+
+			ajouterPoint(donnees.gagnant);
+			retirerPoint(donnees.perdant);
+
+			gameInfos.balleX = 50-2;
+			gameInfos.balleY = 50-2;
+
+			secondeR = 5;
+
+			var d = setInterval(function() {
+				document.getElementById('debutDans').innerHTML = 'Début dans';
+				document.getElementById('decompteDebut').innerHTML = secondeR + 's';
+
+				secondeR--;
+
+				if(secondeR < 0) {
+					window.clearInterval(d);
+					gameInfos.enCours = true;
+
+					document.getElementById('debutDans').innerHTML = '';
+					document.getElementById('decompteDebut').innerHTML = '';
+				}
+			}, 1000);
+		}
+	});
 
 /** Dessiner le jeu **/
 setInterval(function() {
@@ -477,7 +540,8 @@ setInterval(function() {
 				gameInfos.balleAngle *= -1;
 			}
 
-			gameInfos.dernRebond = 1;
+			if(gameInfos.joueur1 != null)
+				gameInfos.dernRebond = 1;
 		}
 	}
 	/* */
@@ -502,7 +566,8 @@ setInterval(function() {
 				gameInfos.balleAngle *= -1;
 			}
 
-			gameInfos.dernRebond = 2;
+			if(gameInfos.joueur2 != null)
+				gameInfos.dernRebond = 2;
 		}
 	}
 	/* */
@@ -527,13 +592,15 @@ setInterval(function() {
 				gameInfos.balleAngle = - 180 -gameInfos.balleAngle;
 			}
 
-			gameInfos.dernRebond = 3;
+			if(gameInfos.joueur3 != null)
+				gameInfos.dernRebond = 3;
 		}
 	}
 	/* */
 
 	/* Si la balle touche la raquette du joueur 4 */
 	// Si la balle est dans la largeur de la raquette
+	console.log(gameInfos.joueur4.position);
 	if(
 		(gameInfos.joueur4 != null && gameInfos.balleX+4 >= gameInfos.joueur4.position && gameInfos.balleX <= gameInfos.joueur4.position+20)
 		|| (gameInfos.joueur4 == null && gameInfos.balleX+4 >= 2 && gameInfos.balleX <= 98)) {
@@ -552,7 +619,9 @@ setInterval(function() {
 				gameInfos.balleAngle = 180 - gameInfos.balleAngle;
 			}
 
-			gameInfos.dernRebond = 4;
+
+			if(gameInfos.joueur4 != null)
+				gameInfos.dernRebond = 4;
 		}
 	}
 	/* */
@@ -581,14 +650,6 @@ setInterval(function() {
 			socket.emit('finQ', { gagnant: gameInfos.dernRebond, perdant: 4 });
 		}
 	}
-
-	socket.on('finR', function(donnees) {
-		if(donnees.gagnant && donnees.perdant) {
-			gameInfos.enCours = false; // On stop la partie temporairement
-
-			/// FAIRE UN DECOMPTE ///
-		}
-	});
 	/* */
 
 	/** **/

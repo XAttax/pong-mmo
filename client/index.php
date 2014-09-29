@@ -59,7 +59,7 @@
 							}, 1000);
 
 							setTimeout(function() {
-								document.location.href = "/Pong/client/<?php echo $game_code; ?>";
+								document.location.href = "http://<?php echo $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].$game_code; ?>";
 							}, 5500);
 						</script>
 

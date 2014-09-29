@@ -53,7 +53,7 @@ io.sockets.on('connection', function(socket) {
 					balleAngle: Math.floor((Math.random() * 360) + 1), // Angle de départ choisi à la création du jeu, compris entre 1 et 360 degré
 					balleVitesse: 0.5,
 					dateCreation: new Date().getTime(),
-					dernRebond: 0, // L'id du joueur qui a touché pour la dernière fois la balle
+					dernRebond: 1, // L'id du joueur qui a touché pour la dernière fois la balle
 					enCours: false // True si le jeu est en cours, false sinon
 				};
 			}
@@ -222,8 +222,8 @@ io.sockets.on('connection', function(socket) {
 	// Dès qu'un joueur a perdu (et donc un autre à gagné)
 	socket.on('finQ', function(donnees) {
 		if(donnees.gagnant && donnees.perdant) {
-			parties[m_jeu_id]['joueur' + donnees.gagnant].points++;
-			parties[m_jeu_id]['joueur' + donnees.perdant].points--;
+			parties[m_jeu_id]['joueur' + donnees.gagnant]['points'] = parties[m_jeu_id]['joueur' + donnees.gagnant]['points'] + 1;
+			parties[m_jeu_id]['joueur' + donnees.perdant]['points'] = parties[m_jeu_id]['joueur' + donnees.perdant]['points'] - 1;
 
 			io.sockets.emit('finR', { gagnant: donnees.gagnant, perdant: donnees.perdant });
 		}
